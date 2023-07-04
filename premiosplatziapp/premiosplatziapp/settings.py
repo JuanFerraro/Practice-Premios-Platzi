@@ -31,12 +31,16 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
+    # My Apps:
+    'polls.apps.PollsConfig', 
+    
+    # Django Apps:
+    'django.contrib.admin', # Administrar datos
+    'django.contrib.auth', # Autenticacion de usuarios
     'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'django.contrib.sessions', # Sesiones de usuarios
+    'django.contrib.messages', # Mensajeria
+    'django.contrib.staticfiles', #HTML, CSS, JS
 ]
 
 MIDDLEWARE = [
@@ -105,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Bogota'
 
 USE_I18N = True
 
