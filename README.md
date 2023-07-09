@@ -1,6 +1,3 @@
-# Practice-Premios-Platzi
-Django Basics 📚
-
 # PRACTICE: Django Basics
 
 ## Guided Practice
