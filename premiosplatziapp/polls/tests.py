@@ -8,7 +8,6 @@ from .models import Question
 
 
 class QuestionModelTest(TestCase):
-
     def test_was_published_recently_with_future_questions(self):
         """was_published_recently returns False for questions that pub_date is in the future"""
         time = timezone.now() + datetime.timedelta(days=30)
@@ -41,7 +40,6 @@ def create_question(question_text, days):
 
 
 class QuestionIndexViewTest(TestCase):
-
     def test_no_questions(self):
         """If no question existe, an appropiate message is displayed"""
         response = self.client.get(reverse("polls:index"))
@@ -92,3 +90,39 @@ class QuestionIndexViewTest(TestCase):
             response.context['latest_question_list'],
             []
         )
+
+
+class QuestionDetailViewTest(TestCase):
+    def test_future_questions(self):
+        """The detail view of a question with a pub date in the future
+            returns a 404 error not found.
+        """ 
+        future_question = create_question("¿Future Question?", days=30)
+        url = reverse('polls:detail', args=(future_question.pk,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_past_question(self):
+        """The detail view of a question with a pub date in the past
+            displays the question's text
+        """
+        past_question = create_question("¿Past Question?", days=-30)
+        url = reverse('polls:detail', args=(past_question.pk,))
+        response = self.client.get(url)
+        self.assertContains(response, past_question.question_text)
+
+
+class ResultsViewTest(TestCase):
+    def test_results_view(self):
+        question = create_question("¿Cual es el mejor profesor?", days=0)
+
+        # Simulacion de una votación
+        choice = question.choice_set.create(choice_text="Martoni")
+        choice.votes = 5
+        choice.save()
+
+        url = reverse('polls:results', args=(question.pk,))
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200) # Respuesta tenga un estado HTTP 200 (OK)
+        self.assertContains(response, question.question_text) # La pregunta se muestre correctamente en la respuesta
+        self.assertContains(response, reverse('polls:detail', args=(question.id,))) # Verificar que el enlace para votar nuevamente se muestre correctamente en la respuesta
