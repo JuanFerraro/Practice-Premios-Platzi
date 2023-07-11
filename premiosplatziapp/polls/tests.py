@@ -27,6 +27,19 @@ class QuestionModelTest(TestCase):
         future_question = Question(question_text="¿Pregunta del pasado?", pub_date=time)
         self.assertIs(future_question.was_published_recently(), False)
 
+
+def create_question(question_text, days):
+    """Create a question with the given question text
+        and published the given number of days offset to now.
+        (negative for questions published in the past, positive for question that have yet to be published)
+    Args:
+        question_text (_str_)
+        days (_int_)
+    """
+    time = timezone.now() + datetime.timedelta(days=days)
+    return Question.objects.create(question_text=question_text, pub_date = time)
+
+
 class QuestionIndexViewTest(TestCase):
 
     def test_no_questions(self):
@@ -40,6 +53,42 @@ class QuestionIndexViewTest(TestCase):
         """No future questions in the views until his pub_time is equal to the present time"""
         response = self.client.get(reverse("polls:index")) # Peticion http
         self.assertEqual(response.status_code, 200)
-        time = timezone.now() + datetime.timedelta(days=5)
-        future_question = Question(question_text="¿Pregunta futura?", pub_date=time)
+        future_question = create_question("¿Pregunta futura?", days=5)
+        self.assertContains(response, "No polls are available.")
         self.assertNotIn(future_question, response.context['latest_question_list'])
+
+    def test_past_questions(self):
+        """Questions with a pub:date un the past are displayed on the index page"""
+        past_question = create_question("¿Pregunta pasada?", days=-5)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerysetEqual(response.context["latest_question_list"], [past_question])
+
+    def test_future_question_and_past_question(self):
+        """Even if both past and future questoin exist, just the past question are displayed """
+        past_question = create_question("¿Past Question?", days=-30)
+        future_question = create_question("¿Future Question?", days=30)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerysetEqual(
+            response.context['latest_question_list'],
+            [past_question]
+        )
+
+    def test_two_past_questions(self):
+        """The questions index page may display multiple questions"""   
+        past_question_1 = create_question("¿Past Question 1?", days=-30)
+        past_question_2 = create_question("¿Past Question 2?", days=-35)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerysetEqual(
+            response.context['latest_question_list'],
+            [past_question_1, past_question_2]
+        )
+
+    def test_two_future_questions(self):
+        """The questions index page may no display multiple questions"""   
+        future_question_1 = create_question("¿Future Question 1?", days=30)
+        future_question_2 = create_question("¿Future Question 2?", days=35)
+        response = self.client.get(reverse("polls:index"))
+        self.assertQuerysetEqual(
+            response.context['latest_question_list'],
+            []
+        )
